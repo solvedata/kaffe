@@ -1,7 +1,7 @@
 defmodule Kaffe.Config.ConsumerTest do
   use ExUnit.Case
 
-  describe "configuration/0" do
+  describe "configuration/1" do
     setup do
       consumer_config =
         Application.get_env(:kaffe, :consumer)
@@ -10,6 +10,12 @@ defmodule Kaffe.Config.ConsumerTest do
         |> Keyword.put(:start_with_earliest_message, true)
 
       Application.put_env(:kaffe, :consumer, consumer_config)
+    end
+
+    test "provided options override default configuration" do
+      expected_endpoints = [overridden: :endpoints]
+      %{endpoints: endpoints} = Kaffe.Config.Consumer.configuration(%{endpoints: expected_endpoints})
+      assert endpoints == expected_endpoints
     end
 
     test "correct settings are extracted" do

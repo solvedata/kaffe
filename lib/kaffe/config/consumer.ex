@@ -1,7 +1,11 @@
 defmodule Kaffe.Config.Consumer do
   import Kaffe.Config, only: [heroku_kafka_endpoints: 0, parse_endpoints: 1]
 
-  def configuration do
+  def configuration(options \\ %{}) do
+    Map.merge(default_configuration(), options)
+  end
+
+  def default_configuration() do
     %{
       endpoints: endpoints(),
       subscriber_name: subscriber_name(),
