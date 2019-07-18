@@ -9,8 +9,8 @@ defmodule Kaffe.Config.Consumer do
     %{
       endpoints: endpoints(),
       subscriber_name: subscriber_name(),
-      consumer_group: consumer_group(),
-      topics: topics(),
+      consumer_group: config_get(:consumer_group, nil),
+      topics: config_get(:topics, []),
       group_config: consumer_group_config(),
       consumer_config: client_consumer_config(),
       message_handler: message_handler(),
@@ -26,11 +26,15 @@ defmodule Kaffe.Config.Consumer do
     }
   end
 
-  def consumer_group, do: config_get!(:consumer_group)
 
-  def subscriber_name, do: config_get(:subscriber_name, consumer_group()) |> String.to_atom()
-
-  def topics, do: config_get!(:topics)
+  def subscriber_name do
+    case config_get(:subscriber_name, nil) do
+      nil ->
+        nil
+      configured_subscriber_name ->
+        String.to_atom(configured_subscriber_name)
+    end
+  end
 
   def message_handler, do: config_get!(:message_handler)
 

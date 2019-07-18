@@ -44,3 +44,4 @@ defmodule Kaffe.ConsumerTest do
   end
 
 end
+
