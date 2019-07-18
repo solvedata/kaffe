@@ -61,6 +61,7 @@ defmodule Kaffe.GroupManager do
 
     # only start group members if config has topics
 
+    initial_topics = config.topics || []
     cond do
       List.first(config.topics) == nil ->
         Logger.warn("event#init=#{__MODULE__} name=#{name()} not starting members, no topics provided")
@@ -68,13 +69,15 @@ defmodule Kaffe.GroupManager do
         GenServer.cast(self(), {:start_group_members})
     end
 
-    {:ok,
-     %State{
+    state = %State{
        supervisor_pid: supervisor_pid,
        subscriber_name: config.subscriber_name,
        consumer_group: config.consumer_group,
-       topics: config.topics
-     }}
+       topics: initial_topics
+     }
+    Logger.debug("event#init=#{__MODULE__} name=#{name()} finished with: #{inspect state}")
+
+    {:ok, state}
   end
 
   @doc """
