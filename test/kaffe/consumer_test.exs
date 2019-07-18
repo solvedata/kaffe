@@ -33,3 +33,4 @@ defmodule Kaffe.ConsumerTest do
     assert_receive %{topic: ^topic, partition: ^partition, value: ^value}
   end
 end
+

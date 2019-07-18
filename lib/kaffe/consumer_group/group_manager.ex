@@ -54,12 +54,19 @@ defmodule Kaffe.GroupManager do
   ## Callbacks
   ## ==========================================================================
   def init([supervisor_pid]) do
-    Logger.info("event#startup=#{__MODULE__} name=#{name()}")
+    Logger.warn("event#startup=#{__MODULE__} name=#{name()}")
 
     config = Kaffe.Config.Consumer.configuration()
     :ok = kafka().start_client(config.endpoints, config.subscriber_name, config.consumer_config)
 
-    GenServer.cast(self(), {:start_group_members})
+    # only start group members if config has topics
+
+    cond do
+      List.first(config.topics) == nil ->
+        Logger.warn("event#init=#{__MODULE__} name=#{name()} not starting members, no topics provided")
+      true ->
+        GenServer.cast(self(), {:start_group_members})
+    end
 
     {:ok,
      %State{
@@ -77,7 +84,7 @@ defmodule Kaffe.GroupManager do
   first messages, we know there will be a worker to do the actual processing work
   """
   def handle_cast({:start_group_members}, state) do
-    Logger.debug("Starting worker supervisors for group manager: #{inspect(self())}")
+    Logger.warn("Starting worker supervisors for group manager: #{inspect(self())}")
 
     {:ok, worker_supervisor_pid} = group_member_supervisor().start_worker_supervisor(state.supervisor_pid, state.subscriber_name)
     {:ok, worker_manager_pid} = worker_supervisor().start_worker_manager(worker_supervisor_pid, state.subscriber_name)

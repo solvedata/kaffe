@@ -27,8 +27,10 @@ defmodule Kaffe.GroupMemberSupervisor do
   use Supervisor
   require Logger
 
-  def start_link do
-    Supervisor.start_link(__MODULE__, :ok, name: name())
+  def start_link(opts \\ []) do
+    Logger.warn("#{__MODULE__}.start_link", opts: opts)
+    merged_options = Keyword.merge([name: name()], Keyword.new(opts))
+    Supervisor.start_link(__MODULE__, :ok, merged_options)
   end
 
   def start_worker_supervisor(supervisor_pid, subscriber_name) do
@@ -53,7 +55,18 @@ defmodule Kaffe.GroupMemberSupervisor do
   end
 
   def init(:ok) do
-    Logger.info("event#starting=#{__MODULE__}")
+    Logger.warn("event#starting=#{__MODULE__}, with: :ok")
+
+    children = [
+      worker(Kaffe.GroupManager, [])
+    ]
+
+    # If we get a failure, we need to reset so the states are all consistent.
+    supervise(children, strategy: :one_for_all, max_restarts: 0, max_seconds: 1)
+  end
+
+  def init(args) do
+    Logger.warn("event#starting=#{__MODULE__}, args: #{ inspect args}")
 
     children = [
       worker(Kaffe.GroupManager, [])
