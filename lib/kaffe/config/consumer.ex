@@ -1,14 +1,19 @@
 defmodule Kaffe.Config.Consumer do
   import Kaffe.Config, only: [heroku_kafka_endpoints: 0, parse_endpoints: 1]
 
-  def configuration(options \\ %{})
-  def configuration(options) do
+  def configuration(options) when is_map(options) do
     Map.merge(default_configuration(),options)
+    |> parse_endpoint_config()
+    |> validate_config()
+  end
+
+  def configuration() do
+    configuration(%{})
   end
   def default_configuration() do
     default_config =
     %{
-      endpoints: endpoints(),
+      endpoints: [],
       subscriber_name: nil,
       consumer_group: nil,
       topics: [],
@@ -29,7 +34,35 @@ defmodule Kaffe.Config.Consumer do
       worker_allocation_strategy: :worker_per_partition
     }
     kaffe_config = Application.get_env(:kaffe, :consumer) |> Enum.into(%{})
-    Map.merge(default_config, kaffe_config)
+    case kaffe_config do
+      nil ->
+        default_config
+      _ ->
+        Map.merge(default_config, kaffe_config)
+    end
+  end
+
+  def parse_endpoint_config(config = %{ endpoints: endpoints}) when is_list(endpoints) do
+    %{ config | endpoints: parse_endpoints(endpoints) }
+  end
+  def validate_config(config) when is_map(config) do
+    with {:ok, _} <- validate_consumer_group(config),
+         {:ok, _} <- validate_subscriber_name(config),
+        do: config
+  end
+
+  defp validate_consumer_group(config = %{ consumer_config: _consumer_config}) do
+    {:ok, config}
+  end
+  defp validate_consumer_group(_config) do
+    {:error, ":consumer_config not set"}
+  end
+
+  defp validate_subscriber_name(config = %{ subscriber_name: _subscriber_name}) do
+    {:ok, config}
+  end
+  defp validate_subscriber_name(_config) do
+    {:error, ":subscriber_name not set"}
   end
 
   def endpoints do
@@ -78,6 +111,7 @@ defmodule Kaffe.Config.Consumer do
     end
   end
 
+  @spec heroku_kafka? :: any
   def heroku_kafka? do
     config_get(:heroku_kafka_env, false)
   end
